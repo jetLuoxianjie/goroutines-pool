@@ -34,7 +34,7 @@ func GetInstance() *StGoPoolMgr {
 
 func (this *StGoPoolMgr) Init() {
 	if this == nil {
-		println("nil this")
+		fmt.Printf("nil this \n")
 		return
 	}
 
@@ -49,7 +49,7 @@ func (this *StGoPoolMgr) Init() {
 func GO(goFunc func()) {
 	goPoolMgr := GetInstance()
 	if goPoolMgr == nil || goPoolMgr.MReuseChan == nil || goPoolMgr.MNewPipeChan == nil {
-		println("nil")
+		fmt.Printf("nil \n")
 		go goFunc()
 		return
 	}
@@ -69,7 +69,7 @@ func GO(goFunc func()) {
 		go goPoolMgr.RunPipeLine(goFunc)
 	default:
 		// 如果都不行，说明流水线都在运行，且数量超过上限了，则直接go goFunc，不再走协程池
-		println("[GoPoolLog] Pool Cap reach Max")
+		fmt.Printf("[GoPoolLog] Pool Cap reach Max \n")
 		go goFunc()
 	}
 }
@@ -77,13 +77,13 @@ func GO(goFunc func()) {
 // 会有一个常驻的goroutine，用来解决第一个func进入MReuseChan后，无法立即处理的问题
 func (this *StGoPoolMgr) RunDaemonPipeline() {
 	if this == nil || this.MReuseChan == nil || this.MNewPipeChan == nil {
-		println("nil")
+		fmt.Printf("nil \n")
 		return
 	}
 
 	// 每次执行，更新定时器
 	defer func() {
-		println("[GoPoolLog] Recover Daemon Pipe ???")
+		fmt.Printf("[GoPoolLog] Recover Daemon Pipe ???\n")
 	}()
 
 	var goFunc func()
@@ -93,10 +93,10 @@ func (this *StGoPoolMgr) RunDaemonPipeline() {
 		case goFunc = <-this.MReuseChan:
 		}
 		if goFunc == nil {
-			println( "[GoPoolLog] nil goFunc?")
+			fmt.Printf("[GoPoolLog] nil goFunc?\n")
 		} else {
 			// 执行任务
-			println("[GoPoolLog] Daemon Reuse Pipe, cur capacity[%d]", this.MCapacity)
+			fmt.Printf("[GoPoolLog] Daemon Reuse Pipe, cur capacity[%d]\n", this.MCapacity)
 			goFunc()
 		}
 	}
@@ -104,14 +104,14 @@ func (this *StGoPoolMgr) RunDaemonPipeline() {
 
 func (this *StGoPoolMgr) RunPipeLine(goFunc func()) {
 	if this == nil || this.MReuseChan == nil || this.MNewPipeChan == nil {
-		println(false, "nil")
+		fmt.Printf("nil\n")
 		go goFunc()
 		return
 	}
 
 	// 每次执行，更新定时器
 	atomic.AddInt32(&this.MCapacity, 1)
-	println("[GoPoolLog] 1. New Pipe, cur capacity[%d]", this.MCapacity)
+	fmt.Printf("[GoPoolLog] 1. New Pipe, cur capacity[%d]\n", this.MCapacity)
 	timer := time.NewTimer(GO_POOL_IDLE_TIME)
 
 	defer func() {
